@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class CreatePosts(BaseModel):
-    user_id: int
     caption: str
 
 class ShowPosts(BaseModel):
