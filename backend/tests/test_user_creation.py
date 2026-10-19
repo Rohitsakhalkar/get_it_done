@@ -27,7 +27,7 @@ def test_user(db_session):
 
 
 def test_user_creation(client):
-    response = client.post("/users", json = { 
+    response = client.post("/signup", json = { 
             "name" : "Test User",
             "username" : "test_user",
             "email" : "test@example.com",
@@ -43,7 +43,7 @@ def test_user_creation(client):
     assert payload.get("email") == "test@example.com"
 
 def test_user_creation_with_only_required_fields(client):
-    response = client.post("/users", json = {
+    response = client.post("/signup", json = {
         "name" : "test user",
         "username": "test_user",
         "password": "test_1",
@@ -58,7 +58,7 @@ def test_user_creation_with_only_required_fields(client):
     assert payload.get("bio") is None
 
 def test_user_missing_password(client):
-    response = client.post("/users", json = {
+    response = client.post("/signup", json = {
         "name" : "test user",
         "username": "test_user",
         "email" : "test@example.com"
@@ -66,7 +66,7 @@ def test_user_missing_password(client):
     assert response.status_code == 422
 
 def test_already_exist_user_registration(client, test_user):
-    response = client.post("/users", json = { 
+    response = client.post("/signup", json = { 
                 "name" : "Test User",
                 "username" : "test_user",
                 "email" : "test@example.com",
@@ -79,7 +79,7 @@ def test_already_exist_user_registration(client, test_user):
     assert response.status_code == 409
 
 def test_already_exist_email(client, test_user):
-    response = client.post("/users", json = { 
+    response = client.post("/signup", json = { 
                 "name" : "Test User 1",
                 "username" : "test_user1",
                 "email" : "test@example.com",
@@ -88,7 +88,7 @@ def test_already_exist_email(client, test_user):
     assert response.status_code == 409
 
 def test_already_exist_username(client, test_user):
-    response = client.post("/users", json = { 
+    response = client.post("/signup", json = { 
                 "name" : "Test User 1",
                 "username" : "test_user",
                 "email" : "test@example123.com",

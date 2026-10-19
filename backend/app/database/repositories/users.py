@@ -1,5 +1,5 @@
 from app.database.models import User
-from app.schemas.users import ShowUser, UserCreate, UserLogin, UpdateUser
+from app.schemas.users import ShowUser, UserCreate, UserLogin, UpdateUser, ShowSearchedUsers
 from app.security import hash_password
 from fastapi import HTTPException
 from sqlalchemy import or_ 
@@ -74,3 +74,34 @@ def update_user_data(user: UpdateUser, db, current_user):
         raise HTTPException(status_code = 500, detail = "User updation failed")
     
     return show_user(current_user.id, db)
+
+def search_users(identifier, db, limits, offset):
+    users = db.query(User).filter(or_(User.name.ilike(f"%{identifier}%"), 
+                                      User.username.ilike(f"%{identifier}%") )).order_by(User.created_at.desc(), User.id.desc()).limit(limits).offset(offset).all()
+    user_list = []
+    for user in users:
+         response = ShowSearchedUsers(
+                id = user.id,
+                name = user.name,
+                username = user.username,
+            ) 
+         user_list.append(response)
+    return user_list
+
+def search_user(username, db):
+    user = db.query(User).filter(User.username == username).first()
+    if user is None:
+        raise HTTPException(status_code = 404, detail = "user does not exist")
+    response = ShowUser(
+            id = user.id,
+            name = user.name,
+            username = user.username,
+            email = user.email,
+            gender = user.gender,
+            bio = user.bio,
+            home_location = user.home_location,
+            work_location = user.work_location,
+            created_at = user.created_at,
+            updated_at = user.updated_at
+        ) 
+    return response

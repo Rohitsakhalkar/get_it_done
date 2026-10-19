@@ -74,6 +74,7 @@ def test_update_post(client, test_user):
 
     assert response1.status_code == 200
     assert payload1.get("caption") == "post edited"
+   
 
 def test_delete_post(client, test_user):
     access_token = _test_user_login(client, test_user)
@@ -81,7 +82,7 @@ def test_delete_post(client, test_user):
     payload = response.json()
     response1 = client.delete(f"/posts/{payload.get('id')}", headers = {"Authorization": f"Bearer {access_token}"})
     
-    assert response1.status_code == 200
+    assert response1.status_code == 204
 
 def test_unauthorized_update_post(client, test_user):
     access_token = _test_user_login(client, test_user)
@@ -169,3 +170,64 @@ def test_invalid_paginaton(client,test_user):
     posts5 = post5.json()
     response = client.get("/posts", params = {"limit": 0, "offset": 0})
     assert response.status_code == 422
+
+def test_update_post_with_invaild_id(client, test_user):
+    access_token = _test_user_login(client, test_user)
+    response = client.post("/posts", headers = {"Authorization": f"Bearer {access_token}"},json = {"caption": "Hey i am a test user"} )
+    payload = response.json()
+    response1 = client.patch(f"/posts/999", headers = {"Authorization": f"Bearer {access_token}"}, json = {"caption":"post edited"})
+    payload1 = response1.json()
+    posts = client.get("/posts", params = {"limit": 2, "offset": 0})
+    posts_payload = posts.json()
+        
+    assert response1.status_code == 404
+    assert posts_payload[0].get("caption") == "Hey i am a test user"
+
+def test_delete_post_with_invalid_post_id(client, test_user):
+    access_token = _test_user_login(client, test_user)
+    response = client.post("/posts", headers = {"Authorization": f"Bearer {access_token}"},json = {"caption": "Hey i am a test user"} )
+    payload = response.json()
+    response1 = client.delete("/posts/999", headers = {"Authorization": f"Bearer {access_token}"})
+    
+    posts = client.get("/posts", params = {"limit": 2, "offset": 0})
+    posts_payload = posts.json()
+            
+    assert response1.status_code == 404
+    assert posts_payload[0].get("caption") == payload.get("caption")
+
+def test_get_empty_post_response(client, test_user):
+    
+    response = client.get("/posts", params = {"limit": 10, "offset":0})
+    payload = response.json()
+
+    assert response.status_code == 200
+    assert payload == []
+
+def test_get_posts_empty_json(client, test_user):
+    access_token = _test_user_login(client, test_user)
+    response = client.post("/posts", headers = {"Authorization":f"Bearer {access_token}"}, json = {})
+    
+    assert response.status_code == 422
+
+def test_get_posts_empty_caption(client, test_user):
+    access_token = _test_user_login(client, test_user)
+    response = client.post("/posts", headers = {"Authorization":f"Bearer {access_token}"}, json = {"caption": ""})
+
+    assert response.status_code == 422
+
+def test_get_posts_with_whitespace_caption(client, test_user):
+    access_token = _test_user_login(client, test_user)
+    response = client.post("/posts", headers = {"Authorization":f"Bearer {access_token}"}, json = {"caption": "   "})
+
+    assert response.status_code == 422
+
+def test_update_post_with_null(client, test_user):
+    access_token = _test_user_login(client, test_user)
+    response = client.post("/posts", headers = {"Authorization": f"Bearer {access_token}"},json = {"caption": "Hey i am a test user"} )
+    payload = response.json()
+    response1 = client.patch(f"/posts/{payload.get("id")}", headers = {"Authorization": f"Bearer {access_token}"}, json = {})
+    posts = client.get("/posts", params = {"limit": 2, "offset": 0})
+    posts_payload = posts.json()
+
+    assert response1.status_code == 422
+    assert posts_payload[0].get("caption") == payload.get("caption")

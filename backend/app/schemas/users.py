@@ -49,3 +49,9 @@ class ShowUser(BaseModel):
 class UserLogin(BaseModel):
     identifier: str
     password: str
+
+class ShowSearchedUsers(BaseModel):
+    id: int
+    name: str
+    username: str
+    

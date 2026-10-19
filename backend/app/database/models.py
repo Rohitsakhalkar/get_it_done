@@ -1,5 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import ForeignKey, UniqueConstraint, DateTime, func
+from sqlalchemy import ForeignKey, UniqueConstraint, DateTime, func, CheckConstraint, Index
 from datetime import datetime
 
 class Base(DeclarativeBase):
@@ -33,3 +33,14 @@ class Capabilities(Base):
     id: Mapped[int] = mapped_column(primary_key = True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"),nullable = False)
     capability: Mapped[str] = mapped_column(nullable = False)
+
+class Follows(Base):
+    __tablename__ = "follows"
+    __table_args__ = (UniqueConstraint("followed_by","followed_to",name = "uq_follows_followed_by_followed_to"),
+                      CheckConstraint("followed_by != followed_to",name = "ck_follows_no_self_follow"),
+                       Index("ix_follows_followed_to", "followed_to"))
+    
+    id: Mapped[int] = mapped_column(primary_key = True)
+    followed_by: Mapped[int] = mapped_column(ForeignKey("users.id" , ondelete = "CASCADE"), nullable = False)
+    followed_to: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete = "CASCADE"), nullable = False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default = func.now(), nullable = False)
