@@ -72,47 +72,63 @@ def show_user_posts(username: str,
     return get_user_post(username, db, limit, offset)
 
 @app.delete("/posts/{post_id}", status_code = 204)
-def post_deletes(post_id: int ,db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
+def post_deletes(post_id: int ,
+                 db: Session = Depends(get_db),
+                 current_user: User = Depends(get_current_user)):
     post_delete(db, post_id, current_user)
 
 @app.patch("/posts/{post_id}")
-def post_updates(post_id,update_post: UpdatePost,db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def post_updates(post_id,update_post: UpdatePost,
+                 db: Session = Depends(get_db), 
+                 current_user: User = Depends(get_current_user)):
     return post_update(post_id, update_post, db, current_user)
 
 @app.post("/users/capabilities")
-def create_capabilities(Create_Capability: CreateCapabilities ,db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    try:
-        return create_capability(Create_Capability, db, current_user)
-    except IntegrityError:
-        raise HTTPException(status_code = 409 , detail = "capability already exist. please add a new capability")
+def create_capabilities(Create_Capability: CreateCapabilities ,
+                        db: Session = Depends(get_db), 
+                        current_user: User = Depends(get_current_user)):
 
+    return create_capability(Create_Capability, db, current_user)
+    
 @app.get("/users/{user_id}/capabilities")
-def show_capabilities(user_id: int, db: Session = Depends(get_db)):
+def show_capabilities(user_id: int, 
+                      db: Session = Depends(get_db)):
     return show_user_capabilities(user_id, db)
 
 @app.delete("/users/capabilities/{capability_id}", status_code = 204)
-def delete_capabilties(capability_id: int ,db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def delete_capabilties(capability_id: int ,
+                       db: Session = Depends(get_db),
+                        current_user: User = Depends(get_current_user)):
     delete_capability(capability_id, db, current_user)
 
 @app.patch("/users/capabilities/{capability_id}")
-def update_capabilities(capability_id: int, update_data: UpdateUserCapability,db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def update_capabilities(capability_id: int, 
+                        update_data: UpdateUserCapability,
+                        db: Session = Depends(get_db), 
+                        current_user: User = Depends(get_current_user)):
     return update_capability(capability_id, update_data, db, current_user)
 
 @app.post("/users/{username}/follow")
-def follow(username: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def follow(username: str, 
+           db: Session = Depends(get_db), 
+           current_user: User = Depends(get_current_user)):
     return follow_user(username, db, current_user)
 
 @app.delete("/users/{username}/follow", status_code = 204 )
-def unfollow(username: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def unfollow(username: str, 
+             db: Session = Depends(get_db), 
+             current_user: User = Depends(get_current_user)):
     unfollow_user(username,db,current_user)
 
 
 @app.get("/users/{username}/followers/count")
-def get_follower_count_route(username: str, db: Session = Depends(get_db)):
+def get_follower_count_route(username: str, 
+                             db: Session = Depends(get_db)):
     return get_follower_count(username, db)
 
 @app.get("/users/{username}/followings/count")
-def get_following_count_route(username: str, db: Session = Depends(get_db)):
+def get_following_count_route(username: str, 
+                              db: Session = Depends(get_db)):
     return get_following_count(username,db)
 
 @app.get("/users/{username}/followers")

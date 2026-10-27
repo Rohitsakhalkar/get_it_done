@@ -1,7 +1,7 @@
 from app.database.models import User, Capabilities
 from app.schemas.capabilities import CreateCapabilities, ShowCapabilities, ShowUserCapability
 from fastapi import HTTPException
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 def create_capability(Create_Capabilty: CreateCapabilities, db, current_user):
     db_capabilities = Capabilities(
@@ -11,7 +11,11 @@ def create_capability(Create_Capabilty: CreateCapabilities, db, current_user):
     db.add(db_capabilities)
     try:
         db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code = 422, detail = "capability already exists")
     except SQLAlchemyError:
+        db.rollback()
         raise HTTPException(status_code = 500, detail = "couldn't create user")
     show_capabilities = ShowCapabilities(
         id = db_capabilities.id,
