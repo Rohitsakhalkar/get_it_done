@@ -15,10 +15,9 @@ def create_post(db, post: CreatePosts, current_user):
         db.commit()
     except SQLAlchemyError:
         db.rollback()
-        raise HTTPException(status_code = 500, detail = "couldn't create a user")
+        raise HTTPException(status_code = 500, detail = "couldn't create a post")
     show_post = ShowPosts(
         id = db_post.id,
-        user_id = db_post.user_id,
         name = current_user.name,
         username = current_user.username,
         caption = db_post.caption,
@@ -33,7 +32,6 @@ def show_posts(db, post_limit, post_offset):
     for user,post in posts:
         user_post = ShowPosts(
             id = post.id,
-            user_id = post.user_id,
             name = user.name,
             username = user.username,
             caption = post.caption,
@@ -71,10 +69,11 @@ def post_update(post_id, update_data: UpdatePost, db, current_user):
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code = 422, detail = "field is empty or null")
+    except SQLAlchemyError:
+        raise HTTPException(status_code = 500, detail = "couldn't update post" )
     
     post = ShowPosts(
         id = post.id,
-        user_id = post.user_id,
         name = current_user.name,
         username = current_user.username,
         caption = post.caption,
@@ -83,3 +82,40 @@ def post_update(post_id, update_data: UpdatePost, db, current_user):
     )
     return post
 
+def get_post(post_id,db):
+    result = db.query(Post,User).join(User, User.id == Post.user_id).filter(Post.id == post_id).first()
+    if result is None:
+        raise HTTPException(status_code = 404, detail = "post doesn't exist")
+    
+    post, user = result
+    response = ShowPosts(
+            id = post.id,
+            name = user.name,
+            username = user.username,
+            caption = post.caption,
+            created_at = post.created_at,
+            updated_at = post.updated_at
+        )
+    return response
+
+def get_user_post(username, db, limit, offset):
+    user = db.query(User.id).filter(User.username == username).first()
+    if user is None:
+        raise HTTPException(status_code = 404, detail = "user doesn't exist")
+    result = db.query(Post, User).join(User, Post.user_id == User.id).filter(
+        User.username == username).order_by(
+        Post.id.desc()).limit(limit).offset(offset).all()
+    if result is None:
+        raise HTTPException(status_code = 404, detail = "user doesn't exist")
+    show_posts_list = [] 
+    for post, user in result:
+        response = ShowPosts(
+            id = post.id,
+            name = user.name,
+            username = user.username,
+            caption = post.caption,
+            created_at = post.created_at,
+            updated_at = post.updated_at
+        )    
+        show_posts_list.append(response)
+    return show_posts_list

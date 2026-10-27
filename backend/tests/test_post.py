@@ -231,3 +231,102 @@ def test_update_post_with_null(client, test_user):
 
     assert response1.status_code == 422
     assert posts_payload[0].get("caption") == payload.get("caption")
+
+def test_get_post(client, test_user):
+    access_token = _test_user_login(client, test_user)
+    response = client.post("/posts",
+                            headers = {"Authorization": f"Bearer {access_token}"},
+                              json={"caption": "hey this is a test post"})
+    post = response.json()
+    response1 = client.get(f"/posts/{post.get("id")}")
+    get_post = response1.json()
+
+    assert response.status_code == 200
+    assert response1.status_code == 200
+    assert get_post.get("id") == post.get("id")
+    assert get_post.get("caption") == post.get("caption")
+
+def test_get_post2(client, test_user):
+    access_token = _test_user_login(client, test_user)
+    response_post1 = client.post("/posts",
+                            headers = {"Authorization": f"Bearer {access_token}"},
+                              json={"caption": "hey this is a test post"})
+    response_post2 = client.post("/posts",
+                                 headers = {"Authorization": f"Bearer {access_token}"},
+                                 json = {"caption":"test post 2"})
+    post = response_post1.json()
+    post2 = response_post2.json()
+    response1 = client.get(f"/posts/{post.get("id")}")
+    response2 = client.get(f"/posts/{post2.get("id")}")
+    get_post = response1.json()
+    get_post2 = response2.json()
+
+    assert response_post1.status_code == 200
+    assert response_post2.status_code == 200
+    assert response1.status_code == 200
+    assert response2.status_code == 200
+    assert get_post.get("id") == post.get("id")
+    assert get_post.get("caption") == post.get("caption")
+    assert get_post2.get("id") == post2.get("id")
+    assert get_post2.get("caption") == post2.get("caption")
+
+def test_get_post_with_invalid_id(client, test_user):
+    access_token = _test_user_login(client,test_user)
+    response_post = client.post("/posts",
+                                headers = {"Authorization": f"Bearer {access_token}"},
+                                json = {"caption":"test post 1"})
+    post = response_post.json()
+    response = client.get("/posts/2")
+    response1 = client.get(f"/posts/{post.get("id")}")
+    get_post = response1.json()
+
+    assert response_post.status_code == 200
+    assert response.status_code == 404
+    assert response1.status_code == 200
+    assert get_post.get("id") == post.get("id")
+    assert get_post.get("caption") == post.get("caption")
+
+def test_get_user_posts(client, test_user):
+    access_token = _test_user_login(client, test_user)
+    response_post1 = client.post("/posts",
+                        headers = {"Authorization": f"Bearer {access_token}"},
+                        json={"caption": "hey this is a test post"})
+    response_post2 = client.post("/posts",
+                        headers = {"Authorization": f"Bearer {access_token}"},
+                        json = {"caption":"test post 2"})
+
+    post1 = response_post1.json()
+    post2 = response_post2.json()
+
+    user_posts_response = client.get(f"/users/{test_user.username}/posts")
+    user_post = user_posts_response.json()
+
+    assert response_post1.status_code == 200
+    assert response_post2.status_code == 200
+    assert user_posts_response.status_code == 200
+    assert user_post[1].get("id") == post1.get("id")
+    assert user_post[1].get("caption") == post1.get("caption")
+    assert user_post[0].get("id") == post2.get("id")
+    assert user_post[0].get("caption") == post2.get("caption")
+
+def test_get_user_posts_with_invalid_username(client, test_user, test_user2):
+    access_token = _test_user_login(client, test_user)
+    response_post1 = client.post("/posts",
+                            headers = {"Authorization": f"Bearer {access_token}"},
+                            json={"caption": "hey this is a test post"})
+    response_post2 = client.post("/posts",
+                            headers = {"Authorization": f"Bearer {access_token}"},
+                            json = {"caption":"test post 2"})
+    
+    user_posts_response = client.get("/users/test_user3/posts")
+
+    assert response_post1.status_code == 200
+    assert response_post2.status_code == 200
+    assert user_posts_response.status_code == 404
+
+def test_get_user_post_with_no_post_user(client, test_user):
+    user_posts_response = client.get(f"/users/{test_user.username}/posts")
+    users_posts = user_posts_response.json()
+
+    assert user_posts_response.status_code == 200
+    assert users_posts == []

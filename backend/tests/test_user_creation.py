@@ -38,9 +38,8 @@ def test_user_creation(client):
             "gender":"male"
             } )
     payload = response.json()
-    assert response.status_code == 200
-    assert payload.get("username") == "test_user"
-    assert payload.get("email") == "test@example.com"
+    assert response.status_code == 201
+  
 
 def test_user_creation_with_only_required_fields(client):
     response = client.post("/signup", json = {
@@ -50,12 +49,8 @@ def test_user_creation_with_only_required_fields(client):
         "email": "test@example.com"
     })
     payload = response.json()
-    assert response.status_code == 200
-    assert payload.get("username") == "test_user"
-    assert payload.get("work_location") is None
-    assert payload.get("home_location") is None
-    assert payload.get("gender") is None
-    assert payload.get("bio") is None
+    assert response.status_code == 201
+   
 
 def test_user_missing_password(client):
     response = client.post("/signup", json = {

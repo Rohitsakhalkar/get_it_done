@@ -70,7 +70,7 @@ def test_follow_a_user(client, test_user,test_user2):
     response = client.post(f"/users/{test_user2.username}/follow", headers = {"Authorization":f"Bearer {access_token}"})
     payload = response.json()
 
-    assert response.status_code == 200
+    assert response.status_code == 200    
     assert payload.get("followed_by") == test_user.id
     assert payload.get("followed_to") == test_user2.id
     assert payload.get("followed_by_username") == test_user.username

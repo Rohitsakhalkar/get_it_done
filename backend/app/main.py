@@ -10,7 +10,7 @@ from app.database.repositories.users import create_user, user_login, update_user
 from app.schemas.users import UserCreate, UserLogin, UpdateUser
 
 from app.schemas.posts import CreatePosts, ShowPosts, UpdatePost
-from app.database.repositories.posts import show_posts, post_update, post_delete, create_post
+from app.database.repositories.posts import show_posts, post_update, post_delete, create_post, get_post, get_user_post
 
 
 from app.schemas.capabilities import CreateCapabilities, UpdateUserCapability
@@ -21,11 +21,13 @@ from app.database.repositories.follows import follow_user, unfollow_user, get_fo
 app = FastAPI()
 
 @app.post("/login")
-def login(user: UserLogin, db: Session = Depends(get_db) ):
+def login(user: UserLogin, 
+          db: Session = Depends(get_db) ):
     return user_login(db,user)
 
 @app.get("/users/{username}")
-def get_users(username: str,db: Session = Depends(get_db)):
+def get_users(username: str,
+              db: Session = Depends(get_db)):
     return search_user(username,db)
 
 @app.get("/users")
@@ -35,21 +37,39 @@ def get_users(identifier: str = Query(min_length = 1),
               offset: int = Query(default = 0, ge = 0)):
     return search_users(identifier, db, limit, offset)
 
-@app.post("/signup")
-def create_users(user: UserCreate,db: Session = Depends(get_db)):
-    return create_user(db,user)
+@app.post("/signup", status_code = 201)
+def create_users(user: UserCreate,
+                 db: Session = Depends(get_db)):
+    create_user(db,user)
 
 @app.patch("/users/me")
-def update_user(user: UpdateUser, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def update_user(user: UpdateUser, 
+                db: Session = Depends(get_db), 
+                current_user: User = Depends(get_current_user)):
     return update_user_data(user, db, current_user)
     
 @app.post("/posts")
-def create_posts(posts: CreatePosts, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
+def create_posts(posts: CreatePosts, 
+                 db: Session = Depends(get_db),
+                 current_user: User = Depends(get_current_user)):
     return create_post(db, posts, current_user)
 
 @app.get("/posts",response_model=list[ShowPosts])
-def show_post(db: Session = Depends(get_db), limit: int = Query(default = 10, ge = 1, le = 100),offset: int = Query(default = 0, ge = 0) ):
+def show_feed(db: Session = Depends(get_db), 
+              limit: int = Query(default = 10, ge = 1, le = 100),
+              offset: int = Query(default = 0, ge = 0) ):
     return show_posts(db, limit, offset)
+
+@app.get("/posts/{post_id}")
+def show_post(post_id: int, db: Session = Depends(get_db)):
+    return get_post(post_id, db)
+
+@app.get("/users/{username}/posts",response_model = list[ShowPosts] )
+def show_user_posts(username: str, 
+                    db: Session = Depends(get_db), 
+                    limit: int = Query(default = 10, ge = 1, le = 100), 
+                    offset: int = Query(default = 0, ge = 0)):
+    return get_user_post(username, db, limit, offset)
 
 @app.delete("/posts/{post_id}", status_code = 204)
 def post_deletes(post_id: int ,db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):

@@ -62,7 +62,6 @@ def test_user3(db_session):
 def _user_login(client,test_user):
     response = client.post("/login",json = {"identifier":test_user.username,"password":"test_1"})
     access_token = response.json()
-
     return access_token
 
 def test_user_name_update(client, test_user):

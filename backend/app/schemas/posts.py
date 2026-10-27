@@ -14,7 +14,6 @@ class CreatePosts(BaseModel):
     
 class ShowPosts(BaseModel):
     id: int
-    user_id: int
     name: str
     username: str
     caption: str

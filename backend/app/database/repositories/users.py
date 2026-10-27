@@ -32,7 +32,6 @@ def create_user(db,user: UserCreate):
         db.rollback()
         raise HTTPException(status_code = 500 , detail = "user registration failed")
     
-    return show_user(db_user.id, db)
 
 
 def user_login(db, user: UserLogin):
