@@ -44,3 +44,22 @@ class Follows(Base):
     followed_by: Mapped[int] = mapped_column(ForeignKey("users.id" , ondelete = "CASCADE"), nullable = False)
     followed_to: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete = "CASCADE"), nullable = False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default = func.now(), nullable = False)
+
+class Task(Base):
+    __tablename__ = "tasks"
+    id: Mapped[int] = mapped_column(primary_key = True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete = "CASCADE"),nullable = False)
+    title: Mapped[str] = mapped_column(nullable = False)
+    description: Mapped[str] = mapped_column(nullable = False)
+    location: Mapped[str] = mapped_column()
+    payment: Mapped[str] = mapped_column()
+    status: Mapped[str] = mapped_column(default = "open")
+    cancellation_reason: Mapped[str | None] = mapped_column(nullable = True)
+    cancelled_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"),nullable = True)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable = True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable = True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable = True)
+    assigned_to: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable = True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default = func.now(), nullable = False) 
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default = func.now(), onupdate = func.now(), nullable = False)
+ 

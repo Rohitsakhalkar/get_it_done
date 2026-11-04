@@ -144,7 +144,7 @@ def test_update_user_with_empty_capabilty(client, test_user):
         capability_list.append(cap.get("capability"))
 
     assert response.status_code == 200
-    assert patch_response.status_code == 422
+    assert patch_response.status_code == 400
     assert capability_payload.get("capability") in capability_list
 
 def test_update_user_with_whitespace_capabilty(client, test_user):

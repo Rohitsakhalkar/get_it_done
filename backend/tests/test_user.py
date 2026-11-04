@@ -241,6 +241,14 @@ def test_user_bio_with_empty_string(client, test_user):
     assert response.status_code == 200
     assert payload.get("bio") == ""
 
+def test_user_update_with_empty_json(client, test_user):
+    access_token = _user_login(client, test_user)
+    response = client.patch("/users/me", 
+                            headers = {"Authorization": f"Bearer {access_token}"}, 
+                            json = {})
+    
+    assert response.status_code == 400
+
 def test_search_users(client, test_user, test_user2, test_user3):
     response = client.get("/users",params = {"identifier":"test","limit": 2 ,"offset": 0})
     users =  response.json()

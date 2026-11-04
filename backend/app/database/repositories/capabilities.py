@@ -1,5 +1,5 @@
 from app.database.models import User, Capabilities
-from app.schemas.capabilities import CreateCapabilities, ShowCapabilities, ShowUserCapability
+from app.schemas.capabilities import CreateCapabilities, ShowCapabilities, ShowUserCapability, UpdateUserCapability
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
@@ -52,13 +52,16 @@ def delete_capability(capability_id, db, current_user):
         raise HTTPException(status_code = 500 , detail = "couldn't delete user")
     
     
-def update_capability(capability_id, capability_data, db, current_user):
+def update_capability(capability_id, capability_data:UpdateUserCapability, db, current_user):
+    capability_data = capability_data.model_dump(exclude_unset = True)
+    if not capability_data:
+        raise HTTPException(status_code = 400, detail = "empty json")
     capability = db.query(Capabilities).filter(Capabilities.id == capability_id).first()
     if capability is None:
         raise HTTPException(status_code = 404, detail = "capability does not exist")
     if current_user.id != capability.user_id:
         raise HTTPException(status_code = 403, detail = "Unauthorized user")
-    capability.capability = capability_data.capability
+    capability.capability = capability_data.get("capability")
 
     try:
         db.commit()

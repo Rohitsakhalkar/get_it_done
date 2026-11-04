@@ -1,5 +1,5 @@
 import pytest
-from app.database.models import User, Post
+from app.database.models import User
 from app.security import hash_password
 
 
@@ -229,7 +229,7 @@ def test_update_post_with_null(client, test_user):
     posts = client.get("/posts", params = {"limit": 2, "offset": 0})
     posts_payload = posts.json()
 
-    assert response1.status_code == 422
+    assert response1.status_code == 400
     assert posts_payload[0].get("caption") == payload.get("caption")
 
 def test_get_post(client, test_user):

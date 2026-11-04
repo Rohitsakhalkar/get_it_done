@@ -64,6 +64,8 @@ def show_user(id: int,db):
 
 def update_user_data(user: UpdateUser, db, current_user):
     user = user.model_dump(exclude_unset = True)
+    if not user:
+        raise HTTPException(status_code = 400, detail = "empty json")
     for fields, values in user.items():
         setattr(current_user, fields, values)
     try:

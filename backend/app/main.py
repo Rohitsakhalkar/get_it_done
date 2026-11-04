@@ -1,5 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
-from sqlalchemy.exc import IntegrityError
+from fastapi import FastAPI, Depends, Query
 from sqlalchemy.orm import  Session
 from app.database.connection import get_db
 
@@ -18,8 +17,11 @@ from app.database.repositories.capabilities import create_capability,show_user_c
 
 from app.database.repositories.follows import follow_user, unfollow_user, get_follower_count, get_followers, get_following_count ,get_followings
 
-app = FastAPI()
+from app.database.repositories.tasks import create_task, show_tasks, update_task, show_task
+from app.schemas.tasks import CreateTask, UpdateTask, ShowTask
 
+app = FastAPI()
+#user operation routes
 @app.post("/login")
 def login(user: UserLogin, 
           db: Session = Depends(get_db) ):
@@ -47,7 +49,8 @@ def update_user(user: UpdateUser,
                 db: Session = Depends(get_db), 
                 current_user: User = Depends(get_current_user)):
     return update_user_data(user, db, current_user)
-    
+
+#post operations routes
 @app.post("/posts")
 def create_posts(posts: CreatePosts, 
                  db: Session = Depends(get_db),
@@ -78,11 +81,13 @@ def post_deletes(post_id: int ,
     post_delete(db, post_id, current_user)
 
 @app.patch("/posts/{post_id}")
-def post_updates(post_id,update_post: UpdatePost,
+def post_updates(post_id: int,
+                 update_post: UpdatePost,
                  db: Session = Depends(get_db), 
                  current_user: User = Depends(get_current_user)):
     return post_update(post_id, update_post, db, current_user)
 
+#capabilities operation routes
 @app.post("/users/capabilities")
 def create_capabilities(Create_Capability: CreateCapabilities ,
                         db: Session = Depends(get_db), 
@@ -108,6 +113,7 @@ def update_capabilities(capability_id: int,
                         current_user: User = Depends(get_current_user)):
     return update_capability(capability_id, update_data, db, current_user)
 
+#follow operations route
 @app.post("/users/{username}/follow")
 def follow(username: str, 
            db: Session = Depends(get_db), 
@@ -144,3 +150,29 @@ def get_following_route(username: str,
                         limit: int = Query(default = 10 , le = 100, ge = 1),
                         offset: int = Query(default = 0, ge = 0)):
     return get_followings(username, db,limit,offset)
+
+#task operations
+@app.post("/tasks", response_model = ShowTask)
+def create_task_route(task: CreateTask, 
+                    db: Session = Depends(get_db),
+                    current_user: User = Depends(get_current_user)):
+    return create_task(task, db, current_user)
+
+@app.get("/tasks", response_model = list[ShowTask])
+def get_tasks(location: str | None = Query(default = None),
+             current_user: User = Depends(get_current_user),
+             db: Session = Depends(get_db), 
+             limit: int = Query(default = 10, ge = 1, le = 100), 
+             offset: int = Query(default = 0, ge = 0)):
+    return show_tasks(location, current_user, db, limit, offset)
+
+@app.patch("/tasks/{task_id}", response_model = ShowTask)
+def update_task_details(task_id: int , 
+                 details: UpdateTask, 
+                 db: Session = Depends(get_db), 
+                 current_user: User = Depends(get_current_user)):
+    return update_task(task_id, details, db, current_user)
+
+@app.get("/tasks/{task_id}", response_model = ShowTask)
+def get_task(task_id: int, db: Session = Depends(get_db)):
+    return show_task(task_id, db)

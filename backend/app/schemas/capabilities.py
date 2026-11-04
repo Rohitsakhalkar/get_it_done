@@ -19,7 +19,7 @@ class ShowUserCapability(BaseModel):
     capability: str
 
 class UpdateUserCapability(BaseModel):
-    capability: str
+    capability: str | None = None
     @field_validator("capability")
     @classmethod
     def validate_capability(cls,value):

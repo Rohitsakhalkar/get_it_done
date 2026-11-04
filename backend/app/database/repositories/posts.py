@@ -56,6 +56,8 @@ def post_delete(db, post_id, current_user):
 
 def post_update(post_id, update_data: UpdatePost, db, current_user):
     update_data = update_data.model_dump(exclude_unset = True)
+    if not update_data:
+        raise HTTPException(status_code = 400, detail = "empty json")
     post = db.query(Post).filter(Post.id == post_id).first()
     if post is None:
         raise HTTPException(status_code = 404 , detail = "Error post not found")
