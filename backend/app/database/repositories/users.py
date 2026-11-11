@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 def create_user(db: Session, user: UserCreate):
     try:
-        Exisiting_user = (db.query(User)
+        exisiting_user = (db.query(User)
                       .filter(or_(User.username == user.username,
                                    User.email == user.email))
                       .first())
@@ -25,7 +25,7 @@ def create_user(db: Session, user: UserCreate):
         db.rollback()
         raise HTTPException(status_code = 500, detail = "Internal server error")
     
-    if Exisiting_user:
+    if exisiting_user:
         raise HTTPException(status_code = 409 , detail = "username or email already exist")
     
     hashed_password = hash_password(user.password)
@@ -42,13 +42,14 @@ def create_user(db: Session, user: UserCreate):
     try:
         db.add(db_user)
         db.commit()
+        db.refresh(db_user)
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code = 409, detail = "username or email already exist")
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(status_code = 500 , detail = "user registration failed")
-    db.refresh(db_user)
+    
     response = UserResponse(
         message = "User created successfully",
         id = db_user.id,

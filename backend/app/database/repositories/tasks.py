@@ -3,7 +3,6 @@ from app.database.models import Task, User
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
 
 def create_task(task: CreateTask, db: Session, current_user: User):
     db_task = Task(
@@ -38,7 +37,7 @@ def create_task(task: CreateTask, db: Session, current_user: User):
     )
     return response
 
-def show_tasks(location: str, current_user: User, db: Session, limit: int, offset: int):
+def show_tasks(location: str | None, current_user: User, db: Session, limit: int, offset: int):
     if location is None:
         location = current_user.work_location
         if location is None:
