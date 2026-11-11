@@ -40,6 +40,8 @@ def create_task(task: CreateTask, db: Session, current_user: User):
 def show_tasks(location: str, current_user: User, db: Session, limit: int, offset: int):
     if location is None:
         location = current_user.work_location
+        if location is None:
+            raise HTTPException(status_code = 400, detail = "location not provided")
     try:
         result = (db.query(Task, User)
         .join(User, User.id == Task.user_id)
@@ -94,7 +96,7 @@ def update_task(task_id: int, details: UpdateTask, db: Session, current_user: Us
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code = 422, detail = "couldn't update task")
+        raise HTTPException(status_code = 422, detail = "Integrity Error task couldn't update")
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(status_code = 500, detail = "couldn't update task")

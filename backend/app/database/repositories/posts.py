@@ -97,7 +97,7 @@ def post_update(post_id: int, update_data: UpdatePost, db: Session, current_user
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code = 422, detail = "field is empty or null")
+        raise HTTPException(status_code = 422, detail = "Integrity error couldn't update post")
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(status_code = 500, detail = "couldn't update post" )

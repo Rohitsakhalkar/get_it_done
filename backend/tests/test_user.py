@@ -309,7 +309,7 @@ def test_get_user(client,test_user,test_user2,test_user3):
 
     assert response.status_code == 200
     assert user.get("name") == test_user3.name
-    assert user.get("email") == test_user3.email   
+    assert user.get("username") == test_user3.username 
 
 def test_get_user_with_invalid_username(client,test_user,test_user2,test_user3):
     response = client.get(f"/users/damn")

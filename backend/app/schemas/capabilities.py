@@ -5,6 +5,8 @@ class CreateCapabilities(BaseModel):
     @field_validator("capability")
     @classmethod
     def validate_capability(cls,value):
+        if value is None:
+            raise ValueError("field cannot be None")
         if not value.strip():
             raise ValueError("field cannot be empty")
         return value
@@ -23,6 +25,8 @@ class UpdateUserCapability(BaseModel):
     @field_validator("capability")
     @classmethod
     def validate_capability(cls,value):
+        if value is None:
+            raise ValueError("field cannot be None")
         if not value.strip():
             raise ValueError("field cannot be empty")
         return value

@@ -103,8 +103,15 @@ def update_capability(capability_id: int, capability_data: UpdateUserCapability,
 
     try:
         db.commit()
+        db.refresh(capability)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code = 409, detail = "capabilty already Exist")
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(status_code = 500 , detail = "couldn't update user")
-    
-    return capability.capability
+    show_capabilty = ShowUserCapability(
+        id = capability.id,
+        capability = capability.capability
+    )
+    return show_capabilty

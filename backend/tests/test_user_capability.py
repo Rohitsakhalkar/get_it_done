@@ -126,7 +126,7 @@ def test_update_user_capabilty(client, test_user):
     )
     updated_payload = patch_response.json()
     assert patch_response.status_code == 200
-    assert updated_payload == "Python"
+    assert updated_payload.get("capability") == "Python"
 
 def test_update_user_with_empty_capabilty(client, test_user):
     access_token = _login_test_user(client, test_user)
@@ -202,7 +202,6 @@ def test_update_capability_with_Unauthorized_user(client,test_user,test_user2):
     assert response.status_code == 200
     assert response2.status_code == 403
     assert payload[0].get("capability") == capability_reponse.get("capability")
-
 
 def test_update_capability_with_invalid_id(client, test_user):
     access_token = _login_test_user(client, test_user)
