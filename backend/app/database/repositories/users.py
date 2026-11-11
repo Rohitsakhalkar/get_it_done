@@ -47,7 +47,13 @@ def create_user(db: Session, user: UserCreate):
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(status_code = 500 , detail = "user registration failed")
-    
+    db.refresh(db_user)
+    response = {
+        "message":"User created successfully",
+        "id": db_user.id,
+        "username": db_user.username
+    }
+    return response
 
 
 def user_login(db: Session, user: UserLogin):
@@ -79,7 +85,8 @@ def show_user(id: int, db: Session):
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(status_code = 500, detail = "internal server error")
-    
+    if user is None:
+        raise HTTPException(status_code = 404, detail = "User not found")
     response = ShowUser(
         id = user.id,
         name = user.name,

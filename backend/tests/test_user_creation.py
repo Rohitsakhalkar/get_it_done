@@ -39,8 +39,10 @@ def test_user_creation(client):
             } )
     payload = response.json()
     assert response.status_code == 201
+    assert payload.get("id") == 1
+    assert payload.get("username") == "test_user"
+    assert payload.get("message") == "User created successfully"
   
-
 def test_user_creation_with_only_required_fields(client):
     response = client.post("/signup", json = {
         "name" : "test user",
@@ -50,8 +52,10 @@ def test_user_creation_with_only_required_fields(client):
     })
     payload = response.json()
     assert response.status_code == 201
-   
-
+    assert payload.get("id") == 1
+    assert payload.get("username") == "test_user"
+    assert payload.get("message") == "User created successfully"
+      
 def test_user_missing_password(client):
     response = client.post("/signup", json = {
         "name" : "test user",

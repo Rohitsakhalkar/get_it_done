@@ -70,7 +70,7 @@ def get_users(identifier: str = Query(min_length = 1),
 @app.post("/signup", status_code = 201)
 def create_users(user: UserCreate,
                  db: Session = Depends(get_db)):
-    create_user(db,user)
+    return create_user(db,user)
 
 @app.patch("/users/me")
 def update_user(user: UpdateUser, 
