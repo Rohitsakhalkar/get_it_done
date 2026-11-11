@@ -4,7 +4,8 @@ from app.schemas.users import (ShowUser,
                                UserLogin, 
                                UpdateUser, 
                                ShowSearchedUsers,
-                               PublicProfile)
+                               PublicProfile,
+                               UserResponse)
 from fastapi import HTTPException
 from sqlalchemy import or_ 
 from sqlalchemy.exc import (IntegrityError, 
@@ -48,11 +49,11 @@ def create_user(db: Session, user: UserCreate):
         db.rollback()
         raise HTTPException(status_code = 500 , detail = "user registration failed")
     db.refresh(db_user)
-    response = {
-        "message":"User created successfully",
-        "id": db_user.id,
-        "username": db_user.username
-    }
+    response = UserResponse(
+        message = "User created successfully",
+        id = db_user.id,
+        username = db_user.username,
+    )
     return response
 
 def user_login(db: Session, user: UserLogin):
@@ -86,11 +87,12 @@ def show_user(id: int, db: Session):
         raise HTTPException(status_code = 500, detail = "internal server error")
     if user is None:
         raise HTTPException(status_code = 404, detail = "User not found")
-    response = PublicProfile(
+    response = ShowUser(
         id = user.id,
         name = user.name,
         username = user.username,
         gender = user.gender,
+        email = user.email,
         bio = user.bio,
         home_location = user.home_location,
         work_location = user.work_location,
@@ -154,11 +156,6 @@ def search_user(username: str, db: Session):
             id = user.id,
             name = user.name,
             username = user.username,
-            gender = user.gender,
             bio = user.bio,
-            home_location = user.home_location,
-            work_location = user.work_location,
-            created_at = user.created_at,
-            updated_at = user.updated_at
         ) 
     return response

@@ -77,14 +77,14 @@ def delete_capability(capability_id: int, db: Session, current_user: User):
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(status_code = 500 , detail = "couldn't delete user")
-    
-    
+       
 def update_capability(capability_id: int, capability_data: UpdateUserCapability, db: Session, current_user: User):
     
     capability_data = capability_data.model_dump(exclude_unset = True)
     
     if not capability_data:
         raise HTTPException(status_code = 400, detail = "empty json")
+    
     try:
         capability = (db.query(Capabilities)
                       .filter(Capabilities.id == capability_id)

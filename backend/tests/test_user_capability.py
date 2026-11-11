@@ -219,7 +219,8 @@ def test_update_capability_with_invalid_id(client, test_user):
     assert patch_response.status_code == 404
     assert user_capabilities[0].get("capability") == capability_payload.get("capability")
 
-def test_delete_user_capabilty_with_invalid_id(client, test_user):
+def test_delete_user_capability_with_invalid_id(client, test_user):
+
     access_token = _login_test_user(client, test_user)
     response = client.post("/users/capabilities", headers = {"Authorization":f"Bearer {access_token}"}, json = {"capability":"Software Development"})
     payload = response.json()
@@ -230,3 +231,41 @@ def test_delete_user_capabilty_with_invalid_id(client, test_user):
     assert response.status_code == 200
     assert response1.status_code == 404
     assert payload.get("capability") == capabilities[0].get("capability")
+
+def test_update_user_capability_with_existing_user(client, test_user):
+    access_token = _login_test_user(client, test_user)
+    response_capability1 = client.post("/users/capabilities", 
+                           headers = {"Authorization":f"Bearer {access_token}"}, 
+                           json = {"capability":"Software Development"})
+    response_capability2 = client.post("/users/capabilities", 
+                               headers = {"Authorization":f"Bearer {access_token}"}, 
+                               json = {"capability":"python"})
+    
+    capabilty = response_capability1.json()
+
+    patch_response = client.patch(
+                    f"/users/capabilities/{capabilty.get("id")}",
+                    headers = {"Authorization":f"Bearer {access_token}"},
+                    json = {"capability":"python"}
+        )
+
+    assert response_capability1.status_code == 200
+    assert response_capability2.status_code == 200
+    assert patch_response.status_code == 409
+    
+def test_update_user_capability_with_null(client, test_user):
+    access_token = _login_test_user(client, test_user)
+    response_capability1 = client.post("/users/capabilities", 
+                           headers = {"Authorization":f"Bearer {access_token}"}, 
+                           json = {"capability":"Software Development"})
+    capabilty = response_capability1.json()
+
+    patch_response = client.patch(
+                    f"/users/capabilities/{capabilty.get("id")}",
+                    headers = {"Authorization":f"Bearer {access_token}"},
+                    json = {"capability": None}
+        )
+
+    assert response_capability1.status_code == 200
+    assert patch_response.status_code == 422
+

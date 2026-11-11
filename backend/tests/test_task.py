@@ -36,6 +36,21 @@ def test_user2(db_session):
     db_session.refresh(user)
     return user
 
+@pytest.fixture
+def test_user3(db_session):
+    user = User(
+        name = "test user",
+        username = "test_user2",
+        email = "test@example2.com",
+        password_hash = hash_password("test_1"),
+        gender = "male",
+        bio = "test user"
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
 def login_test_user(client, test_user):
     response = client.post("/login", json = {"identifier":test_user.username,"password":"test_1"})
     access_token = response.json()
@@ -720,3 +735,18 @@ def test_update_task_with_empty_json(client, test_user):
     
     assert task1_response.status_code == 200
     assert task1_update_response.status_code == 400
+
+def test_get_task_with_no_location(client, test_user3):
+    access_token = login_test_user(client, test_user3)
+    task1_response = client.post("/tasks", 
+                                 headers = {"authorization":f"Bearer {access_token}"},
+                                 json = {
+                                     "title":"need a devloper to fix my life",
+                                     "description":"life isn't hakuna matata anymore",
+                                     "payment": "10000",
+                                     "location": "Belgavi"
+                                 })
+    get_task_response = client.get("/tasks", headers = {"authorization":f"Bearer {access_token}"})
+
+    assert task1_response.status_code == 200
+    assert get_task_response.status_code == 400

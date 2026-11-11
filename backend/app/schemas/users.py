@@ -49,12 +49,8 @@ class PublicProfile(BaseModel):
     id: int
     name: str
     username: str
-    gender: str | None = None
     bio: str | None = None
-    work_location: str | None = None
-    home_location: str | None = None
-    created_at: datetime
-    updated_at: datetime
+    
 
 class UserLogin(BaseModel):
     identifier: str
@@ -64,4 +60,8 @@ class ShowSearchedUsers(BaseModel):
     id: int
     name: str
     username: str
-    
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    message: str
