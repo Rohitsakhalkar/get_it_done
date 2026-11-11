@@ -1,26 +1,54 @@
 from fastapi import FastAPI, Depends, Query
 from sqlalchemy.orm import  Session
 from app.database.connection import get_db
-
-from app.database.models import User
 from app.dependencies import get_current_user
 
-from app.database.repositories.users import create_user, user_login, update_user_data, search_users, search_user
-from app.schemas.users import UserCreate, UserLogin, UpdateUser
 
-from app.schemas.posts import CreatePosts, ShowPosts, UpdatePost
-from app.database.repositories.posts import show_posts, post_update, post_delete, create_post, get_post, get_user_post
+from app.database.models import User
+from app.database.repositories.users import( create_user, 
+                                            user_login, 
+                                            update_user_data, 
+                                            search_users,
+                                            search_user)
+from app.schemas.users import (UserCreate, 
+                               UserLogin, 
+                               UpdateUser)
+
+from app.schemas.posts import (CreatePosts,
+                               ShowPosts,
+                               UpdatePost)
+from app.database.repositories.posts import( show_posts, 
+                                            post_update, 
+                                            post_delete, 
+                                            create_post, 
+                                            get_post, 
+                                            get_user_post)
 
 
-from app.schemas.capabilities import CreateCapabilities, UpdateUserCapability
-from app.database.repositories.capabilities import create_capability,show_user_capabilities, delete_capability, update_capability
+from app.schemas.capabilities import (CreateCapabilities, 
+                                      UpdateUserCapability)
+from app.database.repositories.capabilities import (create_capability,
+                                                    show_user_capabilities, 
+                                                    delete_capability, 
+                                                    update_capability)
 
-from app.database.repositories.follows import follow_user, unfollow_user, get_follower_count, get_followers, get_following_count ,get_followings
+from app.database.repositories.follows import (follow_user, 
+                                               unfollow_user, 
+                                               get_follower_count, 
+                                               get_followers, 
+                                               get_following_count , 
+                                               get_followings)
 
-from app.database.repositories.tasks import create_task, show_tasks, update_task, show_task
-from app.schemas.tasks import CreateTask, UpdateTask, ShowTask
+from app.database.repositories.tasks import (create_task, 
+                                             show_tasks, 
+                                             update_task, 
+                                             show_task)
+from app.schemas.tasks import (CreateTask, 
+                               UpdateTask, 
+                               ShowTask)
 
 app = FastAPI()
+
 #user operation routes
 @app.post("/login")
 def login(user: UserLogin, 
@@ -28,7 +56,7 @@ def login(user: UserLogin,
     return user_login(db,user)
 
 @app.get("/users/{username}")
-def get_users(username: str,
+def get_user(username: str,
               db: Session = Depends(get_db)):
     return search_user(username,db)
 

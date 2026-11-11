@@ -1,15 +1,32 @@
 from app.database.models import User
-from app.schemas.users import ShowUser, UserCreate, UserLogin, UpdateUser, ShowSearchedUsers
+from app.schemas.users import (ShowUser, 
+                               UserCreate, 
+                               UserLogin, 
+                               UpdateUser, 
+                               ShowSearchedUsers)
 from app.security import hash_password
 from fastapi import HTTPException
 from sqlalchemy import or_ 
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from app.security import hash_password, create_access_token, verify_password
+from sqlalchemy.exc import (IntegrityError, 
+                            SQLAlchemyError)
+from app.security import (hash_password, 
+                          create_access_token, 
+                          verify_password)
+from sqlalchemy.orm import Session
 
-def create_user(db,user: UserCreate):
-    Exisiting_user = db.query(User).filter(or_(User.username == user.username , User.email == user.email)).first()
-    if Exisiting_user is not None:
+def create_user(db: Session, user: UserCreate):
+    try:
+        Exisiting_user = (db.query(User)
+                      .filter(or_(User.username == user.username,
+                                   User.email == user.email))
+                      .first())
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "Internal server error")
+    
+    if Exisiting_user:
         raise HTTPException(status_code = 409 , detail = "username or email already exist")
+    
     hashed_password = hash_password(user.password)
     db_user = User(
         name = user.name,
@@ -24,7 +41,6 @@ def create_user(db,user: UserCreate):
     try:
         db.add(db_user)
         db.commit()
-        db.refresh(db_user)
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code = 409, detail = "username or email already exist")
@@ -34,10 +50,19 @@ def create_user(db,user: UserCreate):
     
 
 
-def user_login(db, user: UserLogin):
-    db_user = db.query(User).filter(or_(User.username == user.identifier, User.email == user.identifier)).first()
+def user_login(db: Session, user: UserLogin):
+    try:
+        db_user = (db.query(User)
+               .filter(or_(User.username == user.identifier, 
+                           User.email == user.identifier))
+               .first())
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "Internal server error")
+    
     if db_user is None:
         raise HTTPException(status_code = 401 ,detail = "Unauthorized login")
+    
     if verify_password(user.password,db_user.password_hash):
         data = {
             "sub": str(db_user.id)
@@ -46,8 +71,15 @@ def user_login(db, user: UserLogin):
     else:
         raise HTTPException(status_code = 401, detail = "Unauthorized login")
     
-def show_user(id: int,db):
-    user = db.query(User).filter(User.id == id).first()
+def show_user(id: int, db: Session):
+    try:
+        user = (db.query(User)
+            .filter(User.id == id)
+            .first())
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "internal server error")
+    
     response = ShowUser(
         id = user.id,
         name = user.name,
@@ -62,8 +94,10 @@ def show_user(id: int,db):
     ) 
     return response
 
-def update_user_data(user: UpdateUser, db, current_user):
+def update_user_data(user: UpdateUser, db: Session, current_user: User):
+
     user = user.model_dump(exclude_unset = True)
+
     if not user:
         raise HTTPException(status_code = 400, detail = "empty json")
     for fields, values in user.items():
@@ -73,12 +107,23 @@ def update_user_data(user: UpdateUser, db, current_user):
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(status_code = 500, detail = "User updation failed")
-    
-    return show_user(current_user.id, db)
+    db.refresh(current_user)
+    response = show_user(current_user.id, db)
+    return response
 
-def search_users(identifier, db, limits, offset):
-    users = db.query(User).filter(or_(User.name.ilike(f"%{identifier}%"), 
-                                      User.username.ilike(f"%{identifier}%") )).order_by(User.created_at.desc(), User.id.desc()).limit(limits).offset(offset).all()
+def search_users(identifier: str, db: Session, limits: int, offset: int):
+    try:
+        users = (db.query(User)
+            .filter(or_(User.name.ilike(f"%{identifier}%"), 
+                        User.username.ilike(f"%{identifier}%")))
+            .order_by(User.created_at.desc(), User.id.desc())
+            .limit(limits)
+            .offset(offset)
+            .all())
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "Internal server error")
+    
     user_list = []
     for user in users:
          response = ShowSearchedUsers(
@@ -89,10 +134,16 @@ def search_users(identifier, db, limits, offset):
          user_list.append(response)
     return user_list
 
-def search_user(username, db):
-    user = db.query(User).filter(User.username == username).first()
+def search_user(username: str, db: Session):
+    try:
+        user = db.query(User).filter(User.username == username).first()
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "Internal server error")
+    
     if user is None:
         raise HTTPException(status_code = 404, detail = "user does not exist")
+    
     response = ShowUser(
             id = user.id,
             name = user.name,

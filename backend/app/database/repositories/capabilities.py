@@ -2,8 +2,10 @@ from app.database.models import User, Capabilities
 from app.schemas.capabilities import CreateCapabilities, ShowCapabilities, ShowUserCapability, UpdateUserCapability
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from sqlalchemy.orm import Session
 
-def create_capability(Create_Capabilty: CreateCapabilities, db, current_user):
+def create_capability(Create_Capabilty: CreateCapabilities, db: Session, current_user: User):
+
     db_capabilities = Capabilities(
         user_id = current_user.id,
         capability = Create_Capabilty.capability
@@ -17,6 +19,7 @@ def create_capability(Create_Capabilty: CreateCapabilities, db, current_user):
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(status_code = 500, detail = "couldn't create user")
+    
     show_capabilities = ShowCapabilities(
         id = db_capabilities.id,
         user_id = db_capabilities.user_id,
@@ -24,11 +27,25 @@ def create_capability(Create_Capabilty: CreateCapabilities, db, current_user):
     )
     return show_capabilities
 
-def show_user_capabilities(user_id, db):
-    user = db.query(User).filter(User.id == user_id).first()
+def show_user_capabilities(user_id: int, db: Session):
+    try:
+        user = (db.query(User)
+                .filter(User.id == user_id)
+                .first())
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "Internal server error")
+    
     if user is None:
         raise HTTPException(status_code = 404, detail = "User doesn't Exist")
-    capabilities = db.query(Capabilities).filter(Capabilities.user_id == user_id).all()
+    try:
+        capabilities = (db.query(Capabilities)
+                        .filter(Capabilities.user_id == user_id)
+                        .all())
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "Internal server error")
+    
     capabilities_list = []
     for cap in capabilities:
         show_capability = ShowUserCapability(
@@ -36,14 +53,24 @@ def show_user_capabilities(user_id, db):
             capability = cap.capability
         ) 
         capabilities_list.append(show_capability)
+
     return capabilities_list
 
-def delete_capability(capability_id, db, current_user):
-    capability = db.query(Capabilities).filter(Capabilities.id == capability_id).first()
+def delete_capability(capability_id: int, db: Session, current_user: User):
+    try:
+        capability = (db.query(Capabilities)
+                      .filter(Capabilities.id == capability_id)
+                      .first())
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "Internal server error")
+    
     if capability is None:
         raise HTTPException(status_code = 404, detail = "capabilty does not exist")
+    
     if current_user.id != capability.user_id:
         raise HTTPException(status_code = 403, detail = "Unauthorized user")
+    
     db.delete(capability)
     try:
         db.commit()
@@ -52,15 +79,26 @@ def delete_capability(capability_id, db, current_user):
         raise HTTPException(status_code = 500 , detail = "couldn't delete user")
     
     
-def update_capability(capability_id, capability_data:UpdateUserCapability, db, current_user):
+def update_capability(capability_id: int, capability_data: UpdateUserCapability, db: Session, current_user: User):
+    
     capability_data = capability_data.model_dump(exclude_unset = True)
+    
     if not capability_data:
         raise HTTPException(status_code = 400, detail = "empty json")
-    capability = db.query(Capabilities).filter(Capabilities.id == capability_id).first()
+    try:
+        capability = (db.query(Capabilities)
+                      .filter(Capabilities.id == capability_id)
+                      .first())
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "Internal server error")
+    
     if capability is None:
         raise HTTPException(status_code = 404, detail = "capability does not exist")
+    
     if current_user.id != capability.user_id:
         raise HTTPException(status_code = 403, detail = "Unauthorized user")
+    
     capability.capability = capability_data.get("capability")
 
     try:

@@ -2,14 +2,15 @@ from app.database.models import Post, User
 from app.schemas.posts import CreatePosts, ShowPosts, UpdatePost
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import Session
 
-
-def create_post(db, post: CreatePosts, current_user):
+def create_post(db: Session, post: CreatePosts, current_user: User):
     
     db_post = Post(
         user_id = current_user.id,
         caption = post.caption
     )
+
     db.add(db_post)
     try:
         db.commit()
@@ -26,9 +27,19 @@ def create_post(db, post: CreatePosts, current_user):
     )
     return show_post
 
-def show_posts(db, post_limit, post_offset):
+def show_posts(db:Session ,limit: int, offset: int):
     posts_list = []
-    posts = db.query(User,Post).join(Post, User.id == Post.user_id).order_by(Post.id.desc()).limit(post_limit).offset(post_offset).all()
+    try:
+        posts = (db.query(User,Post)
+             .join(Post, User.id == Post.user_id)
+             .order_by(Post.id.desc())
+             .limit(limit)
+             .offset(offset)
+             .all())
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "Internal Server error")
+    
     for user,post in posts:
         user_post = ShowPosts(
             id = post.id,
@@ -41,8 +52,14 @@ def show_posts(db, post_limit, post_offset):
         posts_list.append(user_post)
     return posts_list
 
-def post_delete(db, post_id, current_user):
-    post = db.query(Post).filter(Post.id == post_id).first()
+def post_delete(db: Session, post_id: int, current_user: User):
+    try:
+        post = (db.query(Post)
+            .filter(Post.id == post_id)
+            .first())
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "Internal server error")
     if post is None:
         raise HTTPException(status_code = 404, detail = "Post doesn't exist")
     if post.user_id != current_user.id:
@@ -54,17 +71,24 @@ def post_delete(db, post_id, current_user):
         db.rollback()
         raise HTTPException(status_code = 500, detail = "couldn't delete post")
 
-def post_update(post_id, update_data: UpdatePost, db, current_user):
+def post_update(post_id: int, update_data: UpdatePost, db: Session, current_user: User):
     update_data = update_data.model_dump(exclude_unset = True)
     if not update_data:
         raise HTTPException(status_code = 400, detail = "empty json")
-    post = db.query(Post).filter(Post.id == post_id).first()
+    try:
+        post = (db.query(Post)
+                .filter(Post.id == post_id)
+                .first())
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "Internal server error")
     if post is None:
         raise HTTPException(status_code = 404 , detail = "Error post not found")
     if post.user_id != current_user.id:
         raise HTTPException(status_code = 403 ,detail = "you don't have the permission to update this post")
+    
     if update_data.get('caption') is None:
-        raise HTTPException(status_code = 422, detail = "field is empty or null")
+        raise HTTPException(status_code = 400, detail = "field is empty or null")
     post.caption = update_data.get("caption")
     try:
         db.commit()
@@ -84,8 +108,15 @@ def post_update(post_id, update_data: UpdatePost, db, current_user):
     )
     return post
 
-def get_post(post_id,db):
-    result = db.query(Post,User).join(User, User.id == Post.user_id).filter(Post.id == post_id).first()
+def get_post(post_id: int,db: Session):
+    try:
+        result = (db.query(Post,User)
+              .join(User, User.id == Post.user_id)
+              .filter(Post.id == post_id)
+              .first())
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "Internal server error")
     if result is None:
         raise HTTPException(status_code = 404, detail = "post doesn't exist")
     
@@ -100,13 +131,27 @@ def get_post(post_id,db):
         )
     return response
 
-def get_user_post(username, db, limit, offset):
-    user = db.query(User.id).filter(User.username == username).first()
+def get_user_post(username: str, db:Session , limit: int, offset: int):
+    try:
+        user = (db.query(User.id)
+            .filter(User.username == username)
+            .first())
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "Internal server error")
     if user is None:
         raise HTTPException(status_code = 404, detail = "user doesn't exist")
-    result = db.query(Post, User).join(User, Post.user_id == User.id).filter(
-        User.username == username).order_by(
-        Post.id.desc()).limit(limit).offset(offset).all()
+    try:
+        result = (db.query(Post, User)
+              .join(User, Post.user_id == User.id)
+              .filter(User.username == username)
+              .order_by(Post.id.desc())\
+              .limit(limit)
+              .offset(offset)
+              .all())
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code = 500, detail = "Internal server error")
     if result is None:
         raise HTTPException(status_code = 404, detail = "user doesn't exist")
     show_posts_list = [] 
