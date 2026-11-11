@@ -38,6 +38,7 @@ class ShowUser(BaseModel):
     id: int
     name: str
     username: str
+    email: EmailStr
     gender: str | None = None
     bio: str  | None = None
     work_location: str | None = None

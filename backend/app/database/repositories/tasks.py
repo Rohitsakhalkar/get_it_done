@@ -18,7 +18,7 @@ def create_task(task: CreateTask, db: Session, current_user: User):
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code = 422, detail = "Integrity error couldn't update task")
+        raise HTTPException(status_code = 422, detail = "Integrity error couldn't create task")
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(status_code = 500, detail = "Couldn't create task")
@@ -46,7 +46,8 @@ def show_tasks(location: str, current_user: User, db: Session, limit: int, offse
     try:
         result = (db.query(Task, User)
         .join(User, User.id == Task.user_id)
-        .filter(and_((Task.location.ilike(f"%{location}%")),(Task.status == "open")))
+        .filter((Task.location.ilike(f"%{location}%")),
+                (Task.status == "open"))
         .order_by(Task.id.desc())
         .limit(limit)
         .offset(offset).all()) 
